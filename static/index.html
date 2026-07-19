@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Newspaper — Upload</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto;
+           padding: 0 1rem; color: #1b1b1b; }
+    h1 { margin-bottom: .25rem; }
+    p.sub { color: #666; margin-top: 0; }
+    form { border: 2px dashed #bbb; border-radius: 12px; padding: 2rem;
+           text-align: center; margin-top: 2rem; }
+    button { background: #1b4; color: #fff; border: 0; border-radius: 8px;
+             padding: .6rem 1.2rem; font-size: 1rem; cursor: pointer; }
+    button:disabled { background: #aaa; cursor: default; }
+    #status { margin-top: 1rem; min-height: 1.5rem; }
+    a { color: #06c; }
+  </style>
+</head>
+<body>
+  <h1>📰 School Newspaper</h1>
+  <p class="sub">Upload a PDF issue and read it as a flipbook.</p>
+
+  <form id="upload-form">
+    <input type="file" id="file" name="file" accept="application/pdf" required />
+    <div style="margin-top:1rem">
+      <button type="submit" id="submit">Upload &amp; render</button>
+    </div>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submit');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fileInput = document.getElementById('file');
+      if (!fileInput.files.length) return;
+
+      submitBtn.disabled = true;
+      statusEl.textContent = 'Uploading and rendering…';
+
+      const data = new FormData();
+      data.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/api/issues', { method: 'POST', body: data });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.detail || 'Upload failed');
+        // Success → send the reader straight to the flipbook.
+        statusEl.innerHTML =
+          `Done — ${body.page_count} pages. ` +
+          `<a href="${body.view_url}">Open the flipbook →</a>`;
+        window.location.href = body.view_url;
+      } catch (err) {
+        statusEl.textContent = '⚠️ ' + err.message;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

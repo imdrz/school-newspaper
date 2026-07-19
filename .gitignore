@@ -1,0 +1,9 @@
+# Runtime output: uploaded PDFs and rendered pages. Never commit these.
+data/issues/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/

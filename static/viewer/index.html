@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Newspaper — Flipbook</title>
+  <link rel="stylesheet" href="/static/viewer/viewer.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <a class="home" href="/">← Upload another</a>
+    <span id="page-label">Loading…</span>
+    <span class="controls">
+      <button id="prev" aria-label="Previous page">‹</button>
+      <button id="next" aria-label="Next page">›</button>
+    </span>
+  </header>
+
+  <main id="stage">
+    <!-- StPageFlip builds the book inside this element -->
+    <div id="flipbook"></div>
+  </main>
+
+  <!-- The flip library, vendored locally so it works offline. -->
+  <script src="/static/vendor/page-flip.browser.js"></script>
+  <script src="/static/viewer/viewer.js"></script>
+</body>
+</html>
