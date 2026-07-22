@@ -1,5 +1,8 @@
 # Runtime output: uploaded PDFs and rendered pages. Never commit these.
-data/issues/
+data/schools/*/issues/
+
+# Secrets — never commit.
+.env
 
 # Python
 __pycache__/

@@ -8,6 +8,7 @@ def write_manifest(out_dir: Path, manifest: dict) -> None:
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
 def render_pdf_to_pages(pdf_path, out_dir, issue_id, *,
+                        school=None, title=None, date=None,
                         dpi=config.DEFAULT_DPI,
                         image_format=config.IMAGE_FORMAT) -> dict:
     doc = fitz.open(pdf_path)
@@ -29,7 +30,8 @@ def render_pdf_to_pages(pdf_path, out_dir, issue_id, *,
     doc.close()
 
     manifest = {
-        "id": issue_id, "page_count": len(pages),
+        "id": issue_id, "school": school, "title": title, "date": date,
+        "page_count": len(pages),
         "page_width": page_width, "page_height": page_height,
         "dpi": dpi, "pages": pages,
     }

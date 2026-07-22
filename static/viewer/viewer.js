@@ -6,12 +6,20 @@
 // server changes, because the manifest is library-agnostic.
 
 (function () {
-  // The page URL is /view/<issueId> — grab the id from the path.
-  const issueId = window.location.pathname.split("/").pop();
-  const base = `/data/issues/${issueId}`;
+  // The page URL is /<school>/<editionId> — grab both segments from the path.
+  const [school, editionId] = window.location.pathname.split("/").filter(Boolean);
+  const base = `/data/schools/${school}/issues/${editionId}`;
 
   const flipbookEl = document.getElementById("flipbook");
   const pageLabel = document.getElementById("page-label");
+
+  // The toolbar's "home" link was rendered generically; point it at this
+  // edition's school (which is where the upload form now lives).
+  const homeLink = document.querySelector(".home");
+  if (homeLink) {
+    homeLink.href = `/${school}`;
+    homeLink.textContent = "← Back to school";
+  }
 
   async function start() {
     // 1. Load the manifest the server wrote.
