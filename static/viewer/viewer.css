@@ -1,38 +1,144 @@
+/* Flipbook viewer — warm "press-bed" surround.
+   Tokens (colors, type) come from /static/brand.css, linked before this file.
+   This file only styles the viewer chrome; viewer.js is untouched and still
+   drives #page-label, #prev, #next, and .home by their IDs/classes. */
+
+:root {
+  --desk:      #241F1B;   /* warm near-black press bed */
+  --desk-bar:  #191411;   /* toolbar, a touch darker */
+  --mark:      rgba(231, 225, 211, 0.42);  /* crop-mark / hairline on dark */
+}
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  background: #2b2b2b;
-  color: #eee;
+  font-family: var(--body);
+  background: var(--desk);
+  color: var(--paper);
   height: 100vh;
   display: flex;
   flex-direction: column;
 }
+
+/* ---- Toolbar ------------------------------------------------------------- */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: .6rem 1rem;
-  background: #1b1b1b;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--desk-bar);
+  border-bottom: 1px solid rgba(231, 225, 211, 0.12);
 }
-.toolbar .home { color: #9cf; text-decoration: none; }
-.toolbar #page-label { margin-left: auto; }
-.toolbar .controls { display: flex; gap: .4rem; }
-.toolbar button {
-  background: #444; color: #fff; border: 0; border-radius: 6px;
-  width: 2.2rem; height: 2.2rem; font-size: 1.2rem; cursor: pointer;
-}
-.toolbar button:hover { background: #666; }
 
+.toolbar .home {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-decoration: none;
+}
+.toolbar .home:hover { color: var(--press); }
+
+/* Page counter (viewer.js writes "Page X of N"; we set it in small caps). */
+.toolbar #page-label {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.toolbar .controls {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.toolbar .controls .reg-strip { opacity: 0.9; }
+
+.toolbar button {
+  font-family: var(--mono);
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid rgba(231, 225, 211, 0.35);
+  border-radius: 2px;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.toolbar button:hover {
+  background: var(--press);
+  border-color: var(--press);
+  color: var(--paper);
+}
+.toolbar button:focus-visible {
+  outline: 2px solid var(--press);
+  outline-offset: 2px;
+}
+
+/* ---- Stage (the press bed) ----------------------------------------------- */
 #stage {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 1rem;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  /* subtle warm vignette so the sheet lifts off the bed */
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgba(255, 250, 240, 0.05), transparent 70%);
 }
 
-/* StPageFlip adds its own inline sizing; we just center it and add a shadow. */
-#flipbook { box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+/* Crop marks: four L-brackets registering the sheet on the press bed.
+   ::before draws top-left + bottom-right, ::after draws top-right + bottom-left.
+   Each corner is a horizontal + vertical hairline (two gradients). */
+#stage::before,
+#stage::after {
+  content: "";
+  position: absolute;
+  inset: clamp(0.75rem, 2.5vw, 1.5rem);
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: 20px 2px, 2px 20px, 20px 2px, 2px 20px;
+}
+#stage::before {
+  background-image:
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark));
+  background-position: top left, top left, bottom right, bottom right;
+}
+#stage::after {
+  background-image:
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark)),
+    linear-gradient(var(--mark), var(--mark));
+  background-position: top right, top right, bottom left, bottom left;
+}
+
+/* StPageFlip adds its own inline sizing; we center it and lift it off the bed. */
+#flipbook {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.65);
+}
 #flipbook img { width: 100%; height: 100%; display: block; }
+
+@media (max-width: 34rem) {
+  .toolbar .home,
+  .toolbar .controls { flex: 0 0 auto; }
+  .toolbar #page-label { order: 3; flex: 1 0 100%; }
+}

@@ -1,0 +1,12 @@
+{
+  "test-school": {
+    "name": "Test School",
+    "created": "2026-07-19",
+    "admin_emails": ["imadriaz09@gmail.com"]
+  },
+  "default-school": {
+    "name": "Default School",
+    "created": "2026-07-19",
+    "admin_emails": ["imadriaz09@gmail.com"]
+  }
+}

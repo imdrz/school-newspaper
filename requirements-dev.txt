@@ -1,0 +1,5 @@
+# requirements-dev.txt — testing/dev tools only, not needed to run the app.
+# Install alongside the app deps:
+#   pip install -r requirements.txt -r requirements-dev.txt
+pytest==9.1.1
+httpx==0.28.1
