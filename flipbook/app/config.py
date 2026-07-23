@@ -14,7 +14,8 @@ SCHOOLS_REGISTRY = DATA_DIR / "schools.json"  # slug -> {name, created}
 # top-level routes/mounts (/static, /data, /api, /view).
 RESERVED_SLUGS = {"static", "data", "api", "view"}
 
-DEFAULT_DPI = 150          # higher = sharper images, but bigger and slower
+DEFAULT_DPI = 200          # higher = sharper images, but bigger and slower
+JPEG_QUALITY = 90         # 0-100, higher = better quality, but bigger and slower
 IMAGE_FORMAT = "jpg"       # small files, great for newspaper photos
 ALLOWED_EXTENSIONS = {".pdf"}
 MAX_UPLOAD_MB = 50

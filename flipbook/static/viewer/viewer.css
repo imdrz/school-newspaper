@@ -17,6 +17,7 @@ body {
   background: var(--desk);
   color: var(--paper);
   height: 100vh;
+  height: 100dvh;  /* for mobile browsers that hide the address bar */
   display: flex;
   flex-direction: column;
 }
@@ -98,6 +99,8 @@ body {
   /* subtle warm vignette so the sheet lifts off the bed */
   background:
     radial-gradient(120% 90% at 50% 40%, rgba(255, 250, 240, 0.05), transparent 70%);
+  min-height: 0;
+  touch-action: none;
 }
 
 /* Crop marks: four L-brackets registering the sheet on the press bed.
@@ -141,4 +144,42 @@ body {
   .toolbar .home,
   .toolbar .controls { flex: 0 0 auto; }
   .toolbar #page-label { order: 3; flex: 1 0 100%; }
+}
+
+
+/* ---- Zoom overlay -------------------------------------------------------- */
+#zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--desk);
+  overflow: hidden;
+  touch-action: none;
+}
+#zoom-overlay[hidden] { display: none; }
+
+#zoom-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;      /* scale from a fixed corner, not a moving center */
+  display: flex;
+  will-change: transform;
+}
+#zoom-content img { display: block; }
+
+#zoom-close {
+  position: fixed;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 51;
+  font-family: var(--mono);
+  background: var(--desk-bar);
+  color: var(--paper);
+  border: 1px solid rgba(231, 225, 211, 0.35);
+  border-radius: 2px;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 1.1rem;
+  cursor: pointer;
 }
