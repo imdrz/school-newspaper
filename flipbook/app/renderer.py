@@ -10,6 +10,7 @@ def write_manifest(out_dir: Path, manifest: dict) -> None:
 def render_pdf_to_pages(pdf_path, out_dir, issue_id, *,
                         school=None, title=None, date=None,
                         dpi=config.DEFAULT_DPI,
+                        jpeg_quality=config.JPEG_QUALITY,
                         image_format=config.IMAGE_FORMAT) -> dict:
     doc = fitz.open(pdf_path)
     pages_dir = out_dir / "pages"
@@ -23,7 +24,7 @@ def render_pdf_to_pages(pdf_path, out_dir, issue_id, *,
     for index, page in enumerate(doc, start=1):
         pix = page.get_pixmap(matrix=matrix)              # render to a bitmap
         filename = f"page-{index:04d}.{image_format}"     # e.g. page-0001.jpg
-        pix.save(pages_dir / filename)                    # write it to disk
+        pix.save(pages_dir / filename, jpg_quality=jpeg_quality)                    # write it to disk
         if index == 1:                                    # remember page size
             page_width, page_height = pix.width, pix.height
         pages.append({"index": index, "image": f"pages/{filename}"})

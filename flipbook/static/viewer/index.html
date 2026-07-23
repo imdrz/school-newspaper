@@ -15,6 +15,7 @@
       <span class="reg-strip" aria-hidden="true">
         <span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span>
       </span>
+      <button id="zoom" aria-label="Zoom in">🔍</button>
       <button id="prev" aria-label="Previous page">‹</button>
       <button id="next" aria-label="Next page">›</button>
     </span>
@@ -26,6 +27,10 @@
   </main>
 
   <!-- The flip library, vendored locally so it works offline. -->
+  <div id="zoom-overlay" hidden>
+    <div id="zoom-content"></div>
+    <button id="zoom-close" aria-label="Close zoom">✕</button>
+  </div>
   <script src="/static/vendor/page-flip.browser.js"></script>
   <script src="/static/viewer/viewer.js"></script>
 </body>
