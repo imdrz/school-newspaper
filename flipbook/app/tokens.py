@@ -18,7 +18,7 @@ def issue_code(school: str, email: str) -> str:
     return code
 
 def consume_code(school: str, code: str) -> str | None:
-    """If `code` is valid for `school`, return the email and burn the code.
+    """If code is valid for school, return the email and burn the code.
     Otherwise return None. 'Valid' = exists, right school, not expired."""
     entry = _pending.get(code)
     if not entry:

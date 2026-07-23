@@ -75,7 +75,7 @@ def delete_issue(school: str, edition_id: str, admin_email: str = Depends(requir
 
 
 # The public contract for a school, enforced by FastAPI: any field not declared
-# here is stripped from the response before it reaches the client — a structural
+# here is stripped from the response before it reaches the client - a structural
 # second gate beneath storage.public_school's allow-list.
 class PublicSchool(BaseModel):
     slug: str

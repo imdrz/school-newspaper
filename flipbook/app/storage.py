@@ -9,7 +9,7 @@ SLUG_RE = re.compile(r"^[a-z0-9-]+$")
 
 
 def new_issue_id() -> str:
-    """A short unique id like '3f9a1c2b'."""
+    """A short unique id"""
     return uuid.uuid4().hex[:8]
 
 

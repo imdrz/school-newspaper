@@ -2,13 +2,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# This file is app/config.py, so .parent.parent is your module folder.
 MODULE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(MODULE_DIR / ".env")  # read .env into environment variables
 
-STATIC_DIR = MODULE_DIR / "static"      # HTML/JS/CSS we serve to the browser
-DATA_DIR = MODULE_DIR / "data"          # everything we generate at runtime
-SCHOOLS_DIR = DATA_DIR / "schools"      # one sub-folder per school
+STATIC_DIR = MODULE_DIR / "static"
+DATA_DIR = MODULE_DIR / "data"
+SCHOOLS_DIR = DATA_DIR / "schools"      
 SCHOOLS_REGISTRY = DATA_DIR / "schools.json"  # slug -> {name, created}
 
 # Slugs that can't be used as a school slug, since they'd collide with
