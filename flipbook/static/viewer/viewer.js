@@ -10,8 +10,10 @@
   const [school, editionId] = window.location.pathname.split("/").filter(Boolean);
   const base = `/data/schools/${school}/issues/${editionId}`;
 
-  const flipbookEl = document.getElementById("flipbook");
+  const stageEl = document.getElementById("stage");
+  let flipbookEl = document.getElementById("flipbook");
   const pageLabel = document.getElementById("page-label");
+  let pageFlip = null;
 
   // The toolbar's "home" link was rendered generically; point it at this
   // edition's school (which is where the upload form now lives).
@@ -21,55 +23,73 @@
     homeLink.textContent = "← Back to school";
   }
 
-  async function start() {
-    // 1. Load the manifest the server wrote.
-    const manifest = await fetch(`${base}/manifest.json`).then((r) => r.json());
+  // Fit a page into the stage with both dimensions
+  // `aspect` is page_height / page_width. `availH / aspect` expresses the height limit as a width, so all three limits meet inside one Math.min.
+  function fitPageSize(aspect) {
+    const availW = stageEl.clientWidth - 24; 
+    const availH = stageEl.clientHeight - 24;
+    const single = availW < 700;               // phones: ONE page, not a spread
+    const perPageW = single ? availW : availW / 2;
+    const width = Math.floor(Math.min(perPageW, availH / aspect, 1000));
+    return { width, height: Math.floor(width * aspect), single };
+  }
 
-    // 2. Turn each page's relative image path into a full URL.
-    const imageUrls = manifest.pages.map((p) => `${base}/${p.image}`);
-
-    // 3. Work out a page size that fits the screen while keeping the PDF's
-    //    aspect ratio (manifest gives us the rendered pixel size).
+  function buildBook(manifest, imageUrls, startPage = 0) {
     const aspect = manifest.page_height / manifest.page_width;
-    const targetWidth = Math.min(480, window.innerWidth / 2 - 40);
-    const targetHeight = targetWidth * aspect;
+    const { width, height, single } = fitPageSize(aspect);
 
-    // 4. Build the flipbook. `St` is the global exposed by page-flip.browser.js.
-    const pageFlip = new St.PageFlip(flipbookEl, {
-      width: targetWidth,
-      height: targetHeight,
-      size: "stretch",
-      minWidth: 200,
-      maxWidth: 1000,
-      minHeight: 300,
-      maxHeight: 1500,
+    // StPageFlip.destroy() removes the whole #flipbook div from the page,
+    // so on a rebuild it recreate a fresh one before building into it.
+    if (pageFlip) {
+      pageFlip.destroy();
+      flipbookEl = document.createElement("div");
+      flipbookEl.id = "flipbook";
+      stageEl.appendChild(flipbookEl);
+    }
+
+    flipbookEl.style.width = (single ? width : 2 * width) + "px";
+    flipbookEl.style.height = height + "px";
+
+    pageFlip = new St.PageFlip(flipbookEl, {
+      width,
+      height,
+      size: "fixed",
+      userPortrait: single,
       maxShadowOpacity: 0.5,
-      showCover: true,           // treat page 1 as a single cover
+      showCover: true,
       mobileScrollSupport: false,
     });
 
     pageFlip.loadFromImages(imageUrls);
 
-    // 5. Keep the "page X of N" label in sync.
-    //
-    // A flip is animated, so reading the page index right after calling
-    // flipNext() gives a stale value. Instead we listen to the library's
-    // "flip" event, whose `e.data` is the page index AFTER the flip settles.
-    // On wide screens StPageFlip shows two pages at once (a spread), so the
-    // number is the left-hand page of the spread you're looking at.
     const total = pageFlip.getPageCount();
-    function setLabel(pageIndex) {
-      pageLabel.textContent = `Page ${pageIndex + 1} of ${total}`;
-    }
-    setLabel(0); // the book always opens on the first page
+    const setLabel = (i) => { pageLabel.textContent = `Page ${i + 1} of ${total}`; };
+    setLabel(startPage);
     pageFlip.on("flip", (e) => setLabel(e.data));
 
-    // 6. Wire up the toolbar buttons and arrow keys.
+    if (startPage > 0) pageFlip.turnToPage(startPage);
+  }
+
+  async function start() {
+    const manifest = await fetch(`${base}/manifest.json`).then((r) => r.json());
+    const imageUrls = manifest.pages.map((p) => `${base}/${p.image}`);
+
+    buildBook(manifest, imageUrls);
+
     document.getElementById("prev").onclick = () => pageFlip.flipPrev();
     document.getElementById("next").onclick = () => pageFlip.flipNext();
     window.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") pageFlip.flipPrev();
       if (e.key === "ArrowRight") pageFlip.flipNext();
+    });
+
+    // rebuild book on window resize, but only after the user stops resizing for 150ms
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        buildBook(manifest, imageUrls, pageFlip.getCurrentPageIndex());
+      }, 150);
     });
   }
 

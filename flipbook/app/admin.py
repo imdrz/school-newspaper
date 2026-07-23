@@ -61,7 +61,7 @@ def request_code(school: str, email: str = Form(...)):
         raise HTTPException(status_code=404, detail="No such school")
 
     # Only actually send a code if the email is a real admin — but respond the
-    # SAME either way, so we never reveal who the admins are (no enumeration).
+    # same either way, so we never reveal who the admins are (no enumeration).
     if storage.is_admin(school, email):
         code = tokens.issue_code(school, email)
         mailer.send_login_code(email, code, info["name"])

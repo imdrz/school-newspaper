@@ -13,7 +13,7 @@ def send_login_code(to_email: str, code: str, school_name: str) -> None:
     )
 
     if config.EMAIL_BACKEND == "console":
-        # Development: just print it. No real email is sent.
+        # Development -> just print it. No real email is sent.
         print("\n===== DEV EMAIL (console backend) =====")
         print("To:     ", to_email)
         print("Subject:", subject)
