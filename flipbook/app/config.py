@@ -3,10 +3,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 MODULE_DIR = Path(__file__).resolve().parent.parent
+BASE_DATA_DIR = Path(os.environ.get("FLIPBOOK_DATA_DIR", "/opt/flipbook/data"))
 load_dotenv(MODULE_DIR / ".env")  # read .env into environment variables
 
 STATIC_DIR = MODULE_DIR / "static"
-DATA_DIR = MODULE_DIR / "data"
+#DATA_DIR = MODULE_DIR / "data"
+DATA_DIR = BASE_DATA_DIR  # Use a fixed path for data storage
 SCHOOLS_DIR = DATA_DIR / "schools"      
 SCHOOLS_REGISTRY = DATA_DIR / "schools.json"  # slug -> {name, created}
 
