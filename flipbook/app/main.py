@@ -29,13 +29,46 @@ app.include_router(admin.router)
 # matches routes in registration order and /{school}/{edition_id} would
 # otherwise swallow two-segment paths like /static/foo.js.
 config.STATIC_DIR.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=config.STATIC_DIR), name="static")
-app.mount("/data", StaticFiles(directory=config.DATA_DIR), name="data")
+
+# app.mount("/static", StaticFiles(directory=config.STATIC_DIR), name="static")
+# app.mount("/data", StaticFiles(directory=config.DATA_DIR), name="data")
+
+
+class CachedStaticFiles(StaticFiles):
+    IMMUTABLE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+
+    def __init__(self, *args, immutable_assets: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.immutable_assets = immutable_assets
+
+    def file_response(self, full_path, *args, **kwargs):
+        response = super().file_response(full_path, *args, **kwargs)
+        cacheable = (
+            self.immutable_assets
+            and Path(full_path).suffix.lower() in self.IMMUTABLE_SUFFIXES
+        )
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable" if cacheable else "no-cache"
+        )
+        return response
+
+
+app.mount("/static", CachedStaticFiles(directory=config.STATIC_DIR), name="static")
+app.mount(
+    "/data",
+    CachedStaticFiles(directory=config.DATA_DIR, immutable_assets=True),
+    name="data",
+)
 
 
 @app.post("/api/schools/{school}/issues")
-def create_issue(school: str, file: UploadFile, title: str = Form(...), date: str | None = Form(None),
-                 admin_email: str = Depends(require_admin)):
+def create_issue(
+    school: str,
+    file: UploadFile,
+    title: str = Form(...),
+    date: str | None = Form(None),
+    admin_email: str = Depends(require_admin),
+):
     if not storage.school_exists(school):
         raise HTTPException(status_code=404, detail="No such school")
 
@@ -55,19 +88,28 @@ def create_issue(school: str, file: UploadFile, title: str = Form(...), date: st
     # 3. render (stubbed for now)
     try:
         manifest = renderer.render_pdf_to_pages(
-            storage.source_pdf_path(school, issue_id), out_dir, issue_id,
-            school=school, title=title, date=date,
+            storage.source_pdf_path(school, issue_id),
+            out_dir,
+            issue_id,
+            school=school,
+            title=title,
+            date=date,
         )
     except NotImplementedError as exc:
         raise HTTPException(status_code=501, detail=str(exc))
 
     # 4. respond
-    return {"id": issue_id, "page_count": manifest["page_count"],
-            "view_url": f"/{school}/{issue_id}"}
+    return {
+        "id": issue_id,
+        "page_count": manifest["page_count"],
+        "view_url": f"/{school}/{issue_id}",
+    }
 
 
 @app.delete("/api/schools/{school}/issues/{edition_id}")
-def delete_issue(school: str, edition_id: str, admin_email: str = Depends(require_admin)):
+def delete_issue(
+    school: str, edition_id: str, admin_email: str = Depends(require_admin)
+):
     if not storage.issue_exists(school, edition_id):
         raise HTTPException(status_code=404, detail="No such issue")
     shutil.rmtree(storage.issue_dir(school, edition_id))
@@ -123,10 +165,14 @@ def school_home(school: str, request: Request):
         pp = f"{n} page" + ("" if n == 1 else "s")
         href = f"/{html.escape(school)}/{html.escape(eid)}"
         if pages:
-            cover = (f"/data/schools/{html.escape(school)}/issues/"
-                     f"{html.escape(eid)}/{html.escape(pages[0]['image'])}")
-            frame = (f'<img src="{cover}" loading="lazy" '
-                     f'alt="Cover of {html.escape(title)}" />')
+            cover = (
+                f"/data/schools/{html.escape(school)}/issues/"
+                f"{html.escape(eid)}/{html.escape(pages[0]['image'])}"
+            )
+            frame = (
+                f'<img src="{cover}" loading="lazy" '
+                f'alt="Cover of {html.escape(title)}" />'
+            )
         else:
             frame = f'<div class="cover-card__blank">{html.escape(title)}</div>'
         cards.append(f"""<li class="cover-card">
@@ -141,14 +187,16 @@ def school_home(school: str, request: Request):
 
     editions_block = (
         f'<ul class="cover-grid">{"".join(cards)}</ul>'
-        if cards else '<p class="status">No editions yet — the press is warm.</p>'
+        if cards
+        else '<p class="status">No editions yet — the press is warm.</p>'
     )
 
     # Masthead link reflects sign-in state; upload panel + its script are only
     # emitted for a signed-in admin (empty strings otherwise).
     if is_admin:
-        admin_link = (f'<a href="/{html.escape(school)}/admin/dashboard">'
-                      f'Admin dashboard</a>')
+        admin_link = (
+            f'<a href="/{html.escape(school)}/admin/dashboard">' f"Admin dashboard</a>"
+        )
         upload_html = f"""<section class="press-panel">
         <h2 class="press-panel__head">Submit to press</h2>
         <p class="press-panel__note">Signed in as admin</p>
@@ -254,6 +302,8 @@ def school_home(school: str, request: Request):
 
 @app.get("/{school}/{edition_id}")
 def view(school: str, edition_id: str):
-    if not storage.school_exists(school) or not storage.issue_exists(school, edition_id):
+    if not storage.school_exists(school) or not storage.issue_exists(
+        school, edition_id
+    ):
         raise HTTPException(status_code=404, detail="No such issue")
     return FileResponse(config.STATIC_DIR / "viewer" / "index.html")
