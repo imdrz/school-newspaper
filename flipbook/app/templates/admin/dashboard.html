@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% from "_macros.html" import reg_strip %}
+{% block title %}{{ name }} — Admin dashboard{% endblock %}
+{% block auth %}
+<header class="masthead masthead--sm">
+  <p class="masthead__over">{{ reg_strip() }}<span>Signed in</span></p>
+  <h1 class="masthead__title">You're in</h1>
+  <hr class="rule" />
+</header>
+<section class="press-panel">
+  <p class="hint">Signed in as <strong>{{ admin_email }}</strong>, admin of {{ name }}.</p>
+  <a class="btn" href="/{{ school }}">Go to the paper →</a>
+  <form method="post" action="/{{ school }}/admin/logout" style="margin-top:1rem">
+    <button class="btn btn--ghost">Log out</button>
+  </form>
+</section>
+{% endblock %}

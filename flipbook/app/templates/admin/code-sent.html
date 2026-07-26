@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+{% from "_macros.html" import reg_strip %}
+{% block title %}{{ info.name }} — Check your email{% endblock %}
+{% block auth %}
+<header class="masthead masthead--sm">
+  <p class="masthead__over">{{ reg_strip() }}<a href="/{{ school }}/admin">← Back</a></p>
+  <h1 class="masthead__title">Check your email</h1>
+  <hr class="rule" />
+</header>
+<section class="press-panel">
+  <p class="hint">If that address is an admin of {{ info.name }}, a code is on its way.</p>
+  <form method="post" action="/{{ school }}/admin/verify">
+    <label class="field">
+      <span class="field__label">Sign-in code</span>
+      <input name="code" type="text" placeholder="paste your code" required>
+    </label>
+    <button class="btn">Sign in</button>
+  </form>
+</section>
+{% endblock %}
