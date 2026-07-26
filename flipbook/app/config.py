@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 MODULE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(MODULE_DIR / ".env")  # read .env into environment variables
+COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "False").lower() in ("1", "true", "yes")
 BASE_DATA_DIR = Path(os.environ.get("FLIPBOOK_DATA_DIR", "/opt/flipbook/data"))
 
 STATIC_DIR = MODULE_DIR / "static"
