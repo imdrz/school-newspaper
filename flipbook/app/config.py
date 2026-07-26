@@ -2,11 +2,13 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-MODULE_DIR = Path(__file__).resolve().parent.parent
-BASE_DATA_DIR = Path(os.environ.get("FLIPBOOK_DATA_DIR", "/opt/flipbook/data"))
 load_dotenv(MODULE_DIR / ".env")  # read .env into environment variables
 
+MODULE_DIR = Path(__file__).resolve().parent.parent
+BASE_DATA_DIR = Path(os.environ.get("FLIPBOOK_DATA_DIR", "/opt/flipbook/data"))
+
 STATIC_DIR = MODULE_DIR / "static"
+TEMPLATES_DIR = MODULE_DIR / "app" / "templates"
 #DATA_DIR = MODULE_DIR / "data"
 DATA_DIR = BASE_DATA_DIR  # Use a fixed path for data storage
 SCHOOLS_DIR = DATA_DIR / "schools"      

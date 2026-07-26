@@ -3,59 +3,22 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from . import config, mailer, sessions, storage, tokens
+from .templating import templates
 
 router = APIRouter()
 
-# The CMYK registration strip — the brand's signature, echoed on admin pages.
-_REG = ('<span class="reg-strip" aria-hidden="true">'
-        '<span class="c"></span><span class="m"></span>'
-        '<span class="y"></span><span class="k"></span></span>')
-
-
-def _page(title: str, body: str) -> str:
-    """Wrap an admin fragment in a full, brand-styled document."""
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{title}</title>
-  <link rel="stylesheet" href="/static/brand.css" />
-</head>
-<body>
-  <div class="auth">
-{body}
-  </div>
-</body>
-</html>"""
-
-
 @router.get("/{school}/admin", response_class=HTMLResponse)
-def admin_login_page(school: str):
+def admin_login_page(school: str, request: Request):
     info = storage.get_school(school)
     if not info:
         raise HTTPException(status_code=404, detail="No such school")
-    body = f"""    <header class="masthead masthead--sm">
-      <p class="masthead__over">{_REG}<a href="/{school}">← {info['name']}</a></p>
-      <h1 class="masthead__title">Admin sign in</h1>
-      <hr class="rule" />
-    </header>
-    <section class="press-panel">
-      <h2 class="press-panel__head">Sign in to publish</h2>
-      <p class="press-panel__note">{info['name']}</p>
-      <form method="post" action="/{school}/admin/request-code">
-        <label class="field">
-          <span class="field__label">Email</span>
-          <input name="email" type="email" placeholder="you@school.org" required>
-        </label>
-        <button class="btn">Email me a code</button>
-      </form>
-    </section>"""
-    return _page(f"{info['name']} — Admin", body)
+    return templates.TemplateResponse(
+        request, "admin/login.html", {"school": school, "info": info}
+    )
 
 
 @router.post("/{school}/admin/request-code", response_class=HTMLResponse)
-def request_code(school: str, email: str = Form(...)):
+def request_code(school: str, request: Request, email: str = Form(...)):
     info = storage.get_school(school)
     if not info:
         raise HTTPException(status_code=404, detail="No such school")
@@ -66,22 +29,9 @@ def request_code(school: str, email: str = Form(...)):
         code = tokens.issue_code(school, email)
         mailer.send_login_code(email, code, info["name"])
 
-    body = f"""    <header class="masthead masthead--sm">
-      <p class="masthead__over">{_REG}<a href="/{school}/admin">← Back</a></p>
-      <h1 class="masthead__title">Check your email</h1>
-      <hr class="rule" />
-    </header>
-    <section class="press-panel">
-      <p class="hint">If that address is an admin of {info['name']}, a code is on its way.</p>
-      <form method="post" action="/{school}/admin/verify">
-        <label class="field">
-          <span class="field__label">Sign-in code</span>
-          <input name="code" type="text" placeholder="paste your code" required>
-        </label>
-        <button class="btn">Sign in</button>
-      </form>
-    </section>"""
-    return _page(f"{info['name']} — Check your email", body)
+    return templates.TemplateResponse(
+        request, "admin/code-sent.html", {"school": school, "info": info}
+    )
 
 
 def current_admin(school: str, request: Request) -> str | None:
@@ -121,28 +71,21 @@ def verify(school: str, code: str = Form(...)):
         httponly=True,       # JavaScript can't read it (blocks XSS theft)
         samesite="lax",      # not sent on cross-site POSTs (blocks CSRF)
         max_age=config.SESSION_TTL_SECONDS,
-        # secure=True,       # ← UNCOMMENT in production (HTTPS only)
+        # secure=True,       # UNCOMMENT in production (HTTPS only)
+        secure=config.COOKIE_SECURE,  
     )
     return response
 
 
 @router.get("/{school}/admin/dashboard", response_class=HTMLResponse)
-def dashboard(school: str, admin_email: str = Depends(require_admin)):
+def dashboard(school: str, request: Request, admin_email: str = Depends(require_admin)):
     info = storage.get_school(school)
     name = info["name"] if info else school
-    body = f"""    <header class="masthead masthead--sm">
-      <p class="masthead__over">{_REG}<span>Signed in</span></p>
-      <h1 class="masthead__title">You're in</h1>
-      <hr class="rule" />
-    </header>
-    <section class="press-panel">
-      <p class="hint">Signed in as <strong>{admin_email}</strong>, admin of {name}.</p>
-      <a class="btn" href="/{school}">Go to the paper →</a>
-      <form method="post" action="/{school}/admin/logout" style="margin-top:1rem">
-        <button class="btn btn--ghost">Log out</button>
-      </form>
-    </section>"""
-    return _page(f"{name} — Admin dashboard", body)
+    return templates.TemplateResponse(
+        request,
+        "admin/dashboard.html",
+        {"school": school, "name": name, "admin_email": admin_email},
+    )
 
 
 @router.post("/{school}/admin/logout")

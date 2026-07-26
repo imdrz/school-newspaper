@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_macros.html" import reg_strip %}
+
+{% block title %}{{ info.name }} — Editions{% endblock %}
+
+{% block body_attrs %} data-school="{{ school }}"{% endblock %}
+
+{% block content %}
+<div class="sheet">
+  <header class="masthead">
+    <p class="masthead__over">
+      {{ reg_strip() }}
+      <a href="/">← All papers</a>
+      <span class="spacer"></span>
+      {% if is_admin %}
+        <a href="/{{ school }}/admin/dashboard">Admin dashboard</a>
+      {% else %}
+        <a href="/{{ school }}/admin">Admin sign in</a>
+      {% endif %}
+    </p>
+    <h1 class="masthead__title">{{ info.name }}</h1>
+    <p class="dateline">Every edition, ready to read</p>
+    <hr class="rule" />
+  </header>
+
+  <main>
+    <p class="eyebrow">Editions</p>
+
+    {% if editions %}
+      <ul class="cover-grid">
+        {% for ed in editions %}
+          {% set eid = ed['id'] %}
+          {% set title = ed['title'] or eid %}
+          {% set n = ed['page_count'] or 0 %}
+          <li class="cover-card">
+            <a href="/{{ school }}/{{ eid }}">
+              <div class="cover-card__frame">
+                {% if ed['pages'] %}
+                  <img src="/data/schools/{{ school }}/issues/{{ eid }}/{{ ed['pages'][0]['image'] }}"
+                       loading="lazy" alt="Cover of {{ title }}" />
+                {% else %}
+                  <div class="cover-card__blank">{{ title }}</div>
+                {% endif %}
+              </div>
+              <div class="cover-card__meta">
+                <p class="cover-card__title">{{ title }}</p>
+                <p class="cover-card__sub">{{ ed['date'] | fmt_date }} · {{ n }} page{{ '' if n == 1 else 's' }}</p>
+              </div>
+            </a>
+            {% if is_admin %}
+              <button type="button" class="cover-card__delete"
+                      data-delete-id="{{ eid }}"
+                      data-delete-title="{{ title }}">Delete</button>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="status">No editions yet — the press is warm.</p>
+    {% endif %}
+
+    {% if is_admin %}
+      <section class="press-panel">
+        <h2 class="press-panel__head">Submit to press</h2>
+        <p class="press-panel__note">Signed in as admin</p>
+        <form id="upload-form">
+          <label class="field">
+            <span class="field__label">Title</span>
+            <input type="text" id="title" name="title" required />
+          </label>
+          <label class="field">
+            <span class="field__label">Date</span>
+            <input type="date" id="date" name="date" />
+          </label>
+          <label class="field">
+            <span class="field__label">PDF file</span>
+            <input type="file" id="file" name="file" accept="application/pdf" required />
+          </label>
+          <button class="btn" type="submit" id="submit">Upload &amp; render</button>
+        </form>
+        <p class="status" id="status"></p>
+      </section>
+    {% endif %}
+  </main>
+
+  <footer class="sheet-foot">
+    {{ reg_strip() }}
+    <span>{{ info.name }}</span>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if is_admin %}
+<script src="/static/school.js"></script>
+{% endif %}
+{% endblock %}
