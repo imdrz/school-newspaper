@@ -22,7 +22,7 @@ DEFAULT_DPI = 200          # higher = sharper images, but bigger and slower
 JPEG_QUALITY = 90         # 0-100, higher = better quality, but bigger and slower
 IMAGE_FORMAT = "jpg"       # small files, great for newspaper photos
 ALLOWED_EXTENSIONS = {".pdf"}
-MAX_UPLOAD_MB = 50
+MAX_UPLOAD_MB = 100
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-change-me")
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "console")
