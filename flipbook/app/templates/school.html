@@ -32,6 +32,7 @@
           {% set eid = ed['id'] %}
           {% set title = ed['title'] or eid %}
           {% set n = ed['page_count'] or 0 %}
+          {% set views = ed['view_count'] or 0 %}
           <li class="cover-card">
             <a href="/{{ school }}/{{ eid }}">
               <div class="cover-card__frame">
@@ -44,7 +45,11 @@
               </div>
               <div class="cover-card__meta">
                 <p class="cover-card__title">{{ title }}</p>
-                <p class="cover-card__sub">{{ ed['date'] | fmt_date }} · {{ n }} page{{ '' if n == 1 else 's' }}</p>
+                <p class="cover-card__sub">{{ ed['date'] | fmt_date }} · {{ n }} page{{ '' if n == 1 else 's' }} · {{ views }} view{{ '' if views == 1 else 's' }}</p>
+                {% if is_admin %}
+                  {% set uniques = ed['unique_count'] or 0 %}
+                  <p class="cover-card__sub">{{ uniques }} unique viewer{{ '' if uniques == 1 else 's' }}</p>
+                {% endif %}
               </div>
             </a>
             {% if is_admin %}

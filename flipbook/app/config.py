@@ -11,8 +11,12 @@ STATIC_DIR = MODULE_DIR / "static"
 TEMPLATES_DIR = MODULE_DIR / "app" / "templates"
 #DATA_DIR = MODULE_DIR / "data"
 DATA_DIR = BASE_DATA_DIR  # Use a fixed path for data storage
-SCHOOLS_DIR = DATA_DIR / "schools"      
+SCHOOLS_DIR = DATA_DIR / "schools"
 SCHOOLS_REGISTRY = DATA_DIR / "schools.json"  # slug -> {name, created}
+# View-tracking stats live OUTSIDE DATA_DIR: the /data mount serves everything
+# under DATA_DIR publicly, and the per-edition stats hold visitor ids we must
+# not expose. Sibling of data/, never mounted.
+ANALYTICS_DIR = DATA_DIR.parent / "analytics"
 
 # Slugs that can't be used as a school slug, since they'd collide with
 # top-level routes/mounts (/static, /data, /api, /view).
@@ -31,9 +35,11 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 
 CODE_TTL_SECONDS = 10 * 60           # login codes expire after 10 minutes
 SESSION_TTL_SECONDS = 8 * 60 * 60    # a signed-in session lasts 8 hours
+VISITOR_TTL_SECONDS = 365 * 24 * 60 * 60  # anonymous visitor cookie lasts a year
 
 def ensure_dirs() -> None:
     """Create the data folders if they don't exist yet."""
     SCHOOLS_DIR.mkdir(parents=True, exist_ok=True)
+    ANALYTICS_DIR.mkdir(parents=True, exist_ok=True)
     if not SCHOOLS_REGISTRY.exists():
         SCHOOLS_REGISTRY.write_text("{}")

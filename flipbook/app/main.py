@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import admin, config, renderer, storage
+from . import admin, analytics, config, renderer, storage
 from .admin import require_admin
 from .templating import templates
 
@@ -112,6 +112,8 @@ def delete_issue(
     if not storage.issue_exists(school, edition_id):
         raise HTTPException(status_code=404, detail="No such issue")
     shutil.rmtree(storage.issue_dir(school, edition_id))
+    # The stats file lives outside DATA_DIR, so rmtree above doesn't touch it.
+    analytics._stats_path(school, edition_id).unlink(missing_ok=True)
     return {"deleted": edition_id}
 
 
@@ -140,22 +142,55 @@ def school_home(school: str, request: Request):
     if info is None:
         raise HTTPException(status_code=404, detail="No such school")
 
-    return templates.TemplateResponse(
+    is_admin = admin.current_admin(school, request) is not None
+
+    editions = storage.list_editions(school)
+    for ed in editions:
+        # Total views are public; unique-viewer counts are admin-only.
+        ed["view_count"] = analytics.view_count(school, ed["id"])
+        if is_admin:
+            ed["unique_count"] = analytics.unique_count(school, ed["id"])
+
+    response = templates.TemplateResponse(
         request,
         "school.html",
         {
             "school": school,
             "info": info,
-            "editions": storage.list_editions(school),
-            "is_admin": admin.current_admin(school, request) is not None,
+            "editions": editions,
+            "is_admin": is_admin,
         },
     )
+    # Live view counts must be fresh on every visit — including Back-button
+    # navigation. no-store keeps the browser from serving a stale render (and
+    # makes the page ineligible for the back/forward cache).
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/{school}/{edition_id}")
-def view(school: str, edition_id: str):
+def view(school: str, edition_id: str, request: Request):
     if not storage.school_exists(school) or not storage.issue_exists(
         school, edition_id
     ):
         raise HTTPException(status_code=404, detail="No such issue")
-    return FileResponse(config.STATIC_DIR / "viewer" / "index.html")
+
+    # Count this open. Identify the viewer by an anonymous signed cookie,
+    # minting one the first time we see a browser.
+    vid = analytics.read_visitor_id(request)
+    new_token = None
+    if vid is None:
+        vid, new_token = analytics.mint_visitor_id()
+    analytics.record_view(school, edition_id, vid)
+
+    response = FileResponse(config.STATIC_DIR / "viewer" / "index.html")
+    if new_token is not None:
+        response.set_cookie(
+            analytics.VISITOR_COOKIE,
+            new_token,
+            max_age=config.VISITOR_TTL_SECONDS,
+            httponly=True,
+            samesite="lax",
+            secure=config.COOKIE_SECURE,
+        )
+    return response
